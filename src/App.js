@@ -2,6 +2,10 @@ import {useState, useEffect} from 'react';
 import axios from 'axios';
 import ListItem from './ListItems.';
 import logo from './logo.svg';
+import addTodo from "./components/addTodo";
+import deleteTodo from "./components/deleteTodo";
+import editTodo from "./components/editTodo";
+import updateTodo from "./components/updateTodo";
 import './App.css';
 
 function App() {
@@ -22,53 +26,6 @@ function App() {
   let handleChange = (evt) => {
     setValue(evt.target.value);
     evt.preventDefault();
-  };
-
-  let addTodo = async () => {
-    const resp = await axios.post(`${url}/TododApp`, {
-      name: value
-    });
-    const todos = todo;
-    todos.push(resp.data);
-    setTodo(todos);
-    setValue("");
-    Alerting("Added Todo Successfully");
-  };
-
-  let deleteTodo = async (index) => {
-    const deleteFrom = todo;
-    const todos = deleteFrom[index];
-    await axios.delete(`${url}/TododApp/${todos.id}`);
-    delete deleteFrom[index];
-    setTodo(deleteFrom);
-    Alerting("Deleted Todo Successfully");
-  };
-
-  let editTodo = (index) => {
-    setEditing(true);
-    setEditingIndex(index);
-    Alerting("You can now edit your Todo");
-  };
-
-  let updateTodo = async (index) => {
-    const todos = todo[editingIndex];
-    const resp = await axios.put(`${url}/TododApp/${todos.id}`, {
-      name: value
-    });
-    const editingTodo = todo;
-    editingTodo[editingIndex] = resp.data;
-    setTodo(editingTodo);
-    setEditingIndex(null);
-    setValue("");
-    setEditing(false);
-    Alerting("Updated Todo Successfully");
-  };
-
-  let Alerting = (alert) => {
-    setAlert(alert);
-    setTimeout(()=>{
-      return setAlert(null);
-    }, 1000);
   };
 
   let validate = () => {
@@ -93,13 +50,23 @@ function App() {
           name="todo"
           className="my-4 form-control"
           onChange={handleChange}
+          onKeyUp={(e)=>{
+            console.log(e);
+            if(e.key === "Enter"){
+              if(editing){
+                updateTodo(url, todo, value, editingIndex, setTodo, setEditing, setValue, setEditingIndex, setAlert);
+              } else {
+                addTodo(url, todo, value, setTodo, setValue, setAlert)
+              } 
+            }
+          }}
           placeholder="add new todo"
           value={value}
         />
         <button
           className="btn btn-info my-3 form-control"
           type="button"
-          onClick={editing ? updateTodo : addTodo}
+          onClick={editing ? () => updateTodo(url, todo, value, editingIndex, setTodo, setEditing, setValue, setEditingIndex, setAlert) : () => addTodo(url, todo, value, setTodo, setValue, setAlert)}
           disabled={validate()}>
           {editing ? "update todo" : "add todo"}
         </button>
@@ -110,13 +77,13 @@ function App() {
                 <ListItem
                   key={a.id}
                   todo={a}
-                  todoEdit={()=>{editTodo(index)}}
-                  todoDelete={()=>{deleteTodo(index)}}
+                  todoEdit={()=>{editTodo(index, setEditing, setEditingIndex, setAlert)}}
+                  todoDelete={()=>{deleteTodo(index, url, todo, setTodo, setAlert)}}
                 />
-              );
-            })};
+              )
+            })}
           </ul>
-        )};
+        )}
       </div>
     </div>
   );
